@@ -1,15 +1,29 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=69", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "qsp-sdk"
-version = "0.185.0"
-description = "QSP Minimal SDK (Stage185) bridging Stage178 Core(LTS)"
+name = "qsp-stage187"
+version = "0.187.0"
+description = "Stage187: Attack-Driven CI with Claims 1:1 mapping and audit summaries"
 readme = "README.md"
-requires-python = ">=3.11"
-dependencies = []
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Motohiro Suzuki" }]
 
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["sdk*"]
+dependencies = [
+  "pyyaml>=6.0.1",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0.0",
+]
+
+[tool.setuptools]
+# IMPORTANT: only package `qsp`
+packages = ["qsp"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
