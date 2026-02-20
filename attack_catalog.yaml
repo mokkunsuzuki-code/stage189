@@ -1,0 +1,37 @@
+# MIT License © 2025 Motohiro Suzuki
+attacks:
+  - id: A01
+    name: "Replay ACK"
+    category: "replay"
+    claim: "A1"
+    test_file: "tests/attack_tests/test_A01_replay.py"
+
+  - id: A02
+    name: "Wrong Session ID"
+    category: "binding"
+    claim: "A2"
+    test_file: "tests/attack_tests/test_A02_wrong_session_id.py"
+
+  - id: A03
+    name: "Downgrade"
+    category: "downgrade"
+    claim: "A3"
+    test_file: "tests/attack_tests/test_A03_downgrade.py"
+
+  - id: A04
+    name: "Epoch Skip / Out-of-order"
+    category: "epoch"
+    claim: "A4"
+    test_file: "tests/attack_tests/test_A04_epoch_skip.py"
+
+  - id: A05
+    name: "Transcript Partial Reuse"
+    category: "transcript"
+    claim: "A5"
+    test_file: "tests/attack_tests/test_A05_transcript_reuse.py"
+
+  - id: A06
+    name: "Rekey Race (double rekey)"
+    category: "rekey"
+    claim: "A6"
+    test_file: "tests/attack_tests/test_A06_rekey_race.py"

@@ -1,0 +1,25 @@
+# MIT License © 2025 Motohiro Suzuki
+claims:
+  - id: A1
+    title: "Fail-closed on mismatch"
+    description: "If protocol state detects mismatch or invalid input, it must close and refuse to emit application data."
+
+  - id: A2
+    title: "Session binding"
+    description: "Messages must be bound to a session_id; wrong session_id must be rejected."
+
+  - id: A3
+    title: "Anti-downgrade"
+    description: "Downgrade attempts in algorithm/policy negotiation must be detected and rejected."
+
+  - id: A4
+    title: "Epoch monotonicity"
+    description: "Epoch must never go backward or skip illegally; out-of-order epoch must be rejected."
+
+  - id: A5
+    title: "Transcript uniqueness / anti-reuse"
+    description: "Transcript fragments must not be reused across sessions/epochs in a way that breaks authentication or key separation."
+
+  - id: A6
+    title: "Rekey race safety"
+    description: "Concurrent/double rekey attempts must be handled safely (no split-brain keys; fail-closed or deterministic resolution)."
