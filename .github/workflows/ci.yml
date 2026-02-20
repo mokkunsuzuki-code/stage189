@@ -33,7 +33,9 @@ jobs:
 
       - name: Generate audit summary
         run: |
+          mkdir -p out/reports
           python tools/generate_audit_summary.py || true
+          test -f out/reports/audit_summary.md || echo "(no audit summary generated)" > out/reports/audit_summary.md
           echo "---- audit_summary.md ----"
           cat out/reports/audit_summary.md || true
 
