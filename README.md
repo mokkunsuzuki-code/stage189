@@ -1,145 +1,126 @@
-# MIT License © 2025 Motohiro Suzuki
-
-# QSP Stage186
-## Claims Visibility + Attack-Aware CI + Internet-Draft Integration
-
-Stage186 elevates QSP from implementation-centric development
-to reviewer-facing structured specification.
-
-This stage integrates:
-
-- 🔵 Evidence-preserving CI
-- 🟢 Security Claim visibility (A1–A5)
-- 🟣 Internet-Draft structured documentation
-- 🛡 Explicit attack-model categorization
-
----
-
-# 🔵 Continuous Integration (Fail with Evidence)
-
-Stage186 ensures CI never fails silently.
-
-Artifacts always generated:
-
-- `out/reports/matrix.exit` (machine-readable result)
-- `out/reports/matrix.log` (execution log)
-- `out/reports/summary.md` (human-readable summary)
-
-CI behavior:
-
-- If matrix fails → exit code preserved → artifacts uploaded
-- If matrix passes → deterministic PASS
-
-Workflow:
-`.github/workflows/stage186-ci.yml`
-
-Matrix runner:
-`tools/ci_run_matrix.sh`
-
-Pytest fallback:
-`tools/ci_matrix_pytest.sh`
-
----
-
-# 🟢 Security Claims (A1–A5)
-
-Full table: `claims/CLAIMS.md`
-
-| ID | Claim | Prevents |
-|----|-------|----------|
-| A1 | Fail-Closed Semantics | Silent continuation after validation failure |
-| A2 | Handshake Gating | Pre-handshake data injection |
-| A3 | Epoch Monotonicity | Rollback / Replay |
-| A4 | Session Binding | Cross-session mix-up |
-| A5 | Key Separation | Cross-epoch key reuse |
-
-Stage186 guarantees:
-
-- Claims are reviewer-visible
-- CI structure preserves evidence when violated
-- Scope boundaries are explicit
-
----
-
-# 🟣 Internet-Draft (I-D) Format
-
-Structured draft:
-
-`docs/draft-qsp-stage186-00.md`
-
-Includes:
-
-- Terminology
-- Declared Security Claims
-- Attack-model classification
-- Security Considerations
-- Non-goals
-- Implementation status
-
-Stage186 transitions QSP toward specification maturity.
-
----
-
-# 🛡 Attack Model Classification
-
-Stage186 explicitly categorizes:
-
-- Replay attacks
-- Epoch regression
-- Session mix-up
-- Pre-handshake injection
-- Key reuse
-- Downgrade attacks
-- CI bypass risks
-- Artifact tampering
-
-Security Considerations define:
-
-- What is mitigated
-- What is partially mitigated
-- What is out of scope
-
----
-
-# 🧪 Minimal Smoke Validation
-
-Tests:
-
-`tests/test_stage186_smoke.py`
-
-Ensures:
-
-- Required CI files exist
-- Stage186 invariants are structurally intact
-
----
-
-# 🎯 Stage186 Scope
-
-This stage does NOT:
-
-- Introduce new cryptographic primitives
-- Provide formal symbolic proofs
-- Guarantee quantum-resistance proofs
-- Modify handshake internals
-
-It focuses on structured claims and evidence plumbing.
-
----
-
-# 📈 Why Stage186 Matters
-
-Stage186 transforms QSP into:
-
-- An attack-aware specification
-- A fail-with-evidence CI system
-- A reviewer-visible claims framework
-
-It establishes research posture over feature expansion.
-
----
-
-# License
+# QSP – Stage187  
+## Attack-Driven CI (Claim ↔ Attack ↔ Test Binding)
 
 MIT License © 2025 Motohiro Suzuki
 
+---
+
+## Overview
+
+Stage187 introduces **Attack-Driven Continuous Integration**.
+
+Security claims are no longer documentation-only statements.  
+They are enforced through:
+
+- Explicit attack categories
+- 1:1 mapping between claims and attack tests
+- CI invariants that fail if coverage breaks
+- Automatically generated audit summaries
+
+This stage ensures:
+
+> If a claim exists, at least one concrete attack test must try to break it.
+
+---
+
+## Architecture
+
+
+attack_catalog.yaml
+↓
+tests/attack_tests/test_Axx_*.py
+↓
+claims.yaml
+↓
+tools/lint_attack_driven_ci.py
+↓
+GitHub Actions (ci.yml)
+↓
+audit_summary.md (artifact)
+
+
+---
+
+## Attack Categories (Stage187)
+
+| Attack ID | Category | Claim |
+|-----------|----------|-------|
+| A01 | Replay (nonce reuse) | C1 |
+| A02 | Wrong Session ID | C2 |
+| A03 | Downgrade attack | C3 |
+| A04 | Epoch skip | C4 |
+| A05 | Transcript reuse | C5 |
+| A06 | Rekey race | C6 |
+
+All claims must be covered by ≥1 attack test.
+
+CI fails if:
+- An attack test exists without catalog entry
+- A catalog entry references missing test
+- A claim is not covered
+- YAML structure is invalid
+
+---
+
+## Local Setup
+
+```bash
+python3.11 -m venv .venv
+source .venv/bin/activate
+python -m pip install -U pip
+python -m pip install -e ".[dev]"
+
+Run tests:
+
+pytest -q
+python tools/lint_attack_driven_ci.py
+python tools/generate_audit_summary.py
+CI Guarantees
+
+GitHub Actions enforces:
+
+Pytest execution
+
+Attack ↔ Claim mapping validation
+
+Deterministic import isolation
+
+Always-generated audit artifact
+
+Artifact:
+
+stage187-監査レポート
+Design Philosophy
+
+Stage187 shifts QSP from:
+
+"We claim security"
+
+to
+
+"Security claims must survive adversarial tests continuously."
+
+This is a structural commitment to:
+
+Fail-closed semantics
+
+Explicit threat modeling
+
+Measurable security coverage
+
+Research-grade CI discipline
+
+Status
+
+Stage187 is stable and reproducible.
+
+Next stage will expand:
+
+Audit visualization
+
+Coverage metrics
+
+External review packaging
+
+MIT License
+© 2025 Motohiro Suzuki
