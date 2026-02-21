@@ -1,0 +1,42 @@
+# MIT License © 2025 Motohiro Suzuki
+
+claims:
+  - id: A1
+    name: Handshake Completion Gate
+    description: >
+      Application data MUST NOT be transmitted before handshake completion.
+    assumption:
+      - Honest endpoint state machine
+    lemma_id: lemma_handshake_gate
+
+  - id: A2
+    name: Epoch Monotonicity
+    description: >
+      Epoch value MUST strictly increase on rekey.
+    assumption:
+      - Reliable local counter
+    lemma_id: lemma_epoch_monotonic
+
+  - id: A3
+    name: Fail-Closed on Mismatch
+    description: >
+      Any transcript mismatch MUST lead to immediate connection close.
+    assumption:
+      - Transcript integrity check is correct
+    lemma_id: lemma_fail_closed
+
+  - id: A4
+    name: Key Separation After Rekey
+    description: >
+      Post-rekey traffic keys MUST be cryptographically independent.
+    assumption:
+      - HKDF behaves as PRF
+    lemma_id: lemma_key_separation
+
+  - id: A5
+    name: No Replay Across Epoch
+    description: >
+      Frames from previous epoch MUST be rejected.
+    assumption:
+      - Frame includes epoch field
+    lemma_id: lemma_replay_epoch_reject
