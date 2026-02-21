@@ -1,133 +1,221 @@
-# QSP – Stage187  
-## Attack-Driven CI (Claim ↔ Attack ↔ Test Binding)
+# QSP Stage188 — Attack-Driven CI Audit Coverage
 
-MIT License © 2025 Motohiro Suzuki
+> Continuous, auditable verification of security claims via executable attack scenarios.
 
----
-
-## Overview
-
-Stage187 introduces **Attack-Driven Continuous Integration**.
-
-Security claims are no longer documentation-only statements.  
-They are enforced through:
-
-- Explicit attack categories
-- 1:1 mapping between claims and attack tests
-- CI invariants that fail if coverage breaks
-- Automatically generated audit summaries
-
-This stage ensures:
-
-> If a claim exists, at least one concrete attack test must try to break it.
+Stage188 introduces **Attack-Driven CI audit coverage** to QSP.  
+Each security claim is bound to concrete adversarial tests, executed automatically in CI, and rendered as an auditable coverage matrix.
 
 ---
 
-## Architecture
+## 🔗 Relation to Previous Stage
+
+This stage builds upon:
+
+- Stage187: https://github.com/mokkunsuzuki-code/stage187
+
+Stage188 adds:
+
+- Claim × Attack × PASS/FAIL matrix
+- Coverage % calculation
+- CI gate policy
+- Internet-Draft documentation of verification pipeline
+
+---
+
+# 🎯 Objective
+
+Transform security claims from static documentation into:
+
+- Executable attack tests
+- Continuous CI verification
+- Auditable artifacts
+
+Security claims are no longer statements —  
+they are **continuously enforced properties**.
+
+---
+
+# 🛡 Security Claims (claims.yaml)
+
+Each claim represents a normative security property.
+
+| ID | Title |
+|----|-------|
+| A1 | Fail-closed on mismatch |
+| A2 | Session binding |
+| A3 | Anti-downgrade |
+| A4 | Epoch monotonicity |
+| A5 | Transcript uniqueness / anti-reuse |
+| A6 | Rekey race safety |
+
+Defined in:
+
+
+claims.yaml
+
+
+---
+
+# ⚔ Attack Catalog (attack_catalog.yaml)
+
+Each attack scenario:
+
+- Maps to exactly one security claim
+- Has an executable pytest test file
+- Is continuously executed in CI
+
+Example:
 
 
 attack_catalog.yaml
-↓
-tests/attack_tests/test_Axx_*.py
-↓
+
+
+---
+
+# 🔬 Attack-Driven CI Pipeline
+
+## Execution Flow
+
+1. CI runs per-attack pytest test suites
+2. PASS / FAIL results are collected
+3. Coverage matrix is generated
+4. CI fails if:
+   - Any claim is UNCOVERED
+   - Any attack test FAILS
+
+---
+
+## Generated Artifacts
+
+| Artifact | Description |
+|----------|------------|
+| `out/reports/attack_results.yaml` | Per-attack PASS/FAIL results |
+| `out/reports/audit_summary.md` | Claim-level coverage matrix |
+
+These are produced on every commit via GitHub Actions.
+
+---
+
+# 📊 Example Output
+
+Claim	Covered By Attacks	Status
+A1	A01	PASS
+A2	A02	PASS
+A3	A03	PASS
+A4	A04	PASS
+A5	A05	PASS
+A6	A06	PASS
+
+Coverage: 6/6 (100.0%)
+
+
+---
+
+# 🔁 CI Gate Policy
+
+The pipeline fails if:
+
+1. Any claim has no mapped attack
+2. Any mapped attack test fails
+
+This guarantees:
+
+- No undocumented security claim
+- No unverified claim
+- No silently broken invariant
+
+---
+
+# 🧠 Why This Matters
+
+Most cryptographic repositories provide:
+
+- Documentation
+- Tests
+- Claims
+
+Stage188 binds all three:
+
+Claim → Attack → Executable Test → CI Enforcement → Artifact
+
+This creates a reproducible adversarial validation loop.
+
+---
+
+# 🧾 Internet-Draft Integration
+
+Stage188 formally documents the Attack-Driven CI model inside:
+
+
+docs/draft-qsp-stage186-00.md
+
+
+This makes the verification approach:
+
+- Reviewable
+- Citable
+- Reproducible
+
+---
+
+# 🏗 Repository Structure
+
+
 claims.yaml
-↓
-tools/lint_attack_driven_ci.py
-↓
-GitHub Actions (ci.yml)
-↓
-audit_summary.md (artifact)
+attack_catalog.yaml
+tools/run_attack_tests.py
+tools/generate_audit_summary.py
+.github/workflows/stage188-ci.yml
 
 
 ---
 
-## Attack Categories (Stage187)
+# 🚀 Running Locally
 
-| Attack ID | Category | Claim |
-|-----------|----------|-------|
-| A01 | Replay (nonce reuse) | C1 |
-| A02 | Wrong Session ID | C2 |
-| A03 | Downgrade attack | C3 |
-| A04 | Epoch skip | C4 |
-| A05 | Transcript reuse | C5 |
-| A06 | Rekey race | C6 |
-
-All claims must be covered by ≥1 attack test.
-
-CI fails if:
-- An attack test exists without catalog entry
-- A catalog entry references missing test
-- A claim is not covered
-- YAML structure is invalid
-
----
-
-## Local Setup
+Install dependencies:
 
 ```bash
-python3.11 -m venv .venv
-source .venv/bin/activate
-python -m pip install -U pip
-python -m pip install -e ".[dev]"
+pip install pytest pyyaml
 
-Run tests:
+Run attack tests:
 
-pytest -q
-python tools/lint_attack_driven_ci.py
+python tools/run_attack_tests.py
+
+Generate audit summary:
+
 python tools/generate_audit_summary.py
-CI Guarantees
+📜 License
 
-GitHub Actions enforces:
+MIT License © 2025 Motohiro Suzuki
 
-Pytest execution
+🔬 Research Positioning
 
-Attack ↔ Claim mapping validation
+Stage188 demonstrates:
 
-Deterministic import isolation
+Attack-driven verification
 
-Always-generated audit artifact
+Continuous adversarial validation
 
-Artifact:
+Claim-to-test binding
 
-stage187-監査レポート
-Design Philosophy
+Formal documentation alignment
 
-Stage187 shifts QSP from:
+It is intended for:
 
-"We claim security"
+Cryptographic research
 
-to
+PQC / QKD hybrid systems
 
-"Security claims must survive adversarial tests continuously."
+Security engineering pipelines
 
-This is a structural commitment to:
+Audit-focused protocol design
 
-Fail-closed semantics
+📌 Status
 
-Explicit threat modeling
+✔ All claims covered
+✔ All attacks passing
+✔ CI enforced
+✔ Artifacts generated
+✔ I-D updated
 
-Measurable security coverage
-
-Research-grade CI discipline
-
-Status
-
-Stage187 is stable and reproducible.
-
-Next stage will expand:
-
-Audit visualization
-
-Coverage metrics
-
-External review packaging
-
-MIT License
-© 2025 Motohiro Suzuki
-## 🔍 Audit Coverage
-
-- Auto-generated report: [out/reports/audit_summary.md](out/reports/audit_summary.md)
-- Generated by: `tools/generate_audit_summary.py`
-- CI workflow: `.github/workflows/stage188-ci.yml`
-
-- Raw test results: [out/reports/attack_results.yaml](out/reports/attack_results.yaml)
+QSP Stage188 transforms security documentation into continuously enforced adversarial guarantees.
