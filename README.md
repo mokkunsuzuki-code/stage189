@@ -1,3 +1,5 @@
+[![claim-alignment](https://github.com/mokkunsuzuki-code/stage189/actions/workflows/claim-alignment-ci.yml/badge.svg)](https://github.com/mokkunsuzuki-code/stage189/actions/workflows/claim-alignment-ci.yml)
+
 # QSP Stage188 — Attack-Driven CI Audit Coverage
 
 > Continuous, auditable verification of security claims via executable attack scenarios.
