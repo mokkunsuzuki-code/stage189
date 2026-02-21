@@ -4,3 +4,19 @@ __pycache__/
 .pytest_cache/
 out/
 .venv/
+
+# macOS
+.DS_Store
+
+# Python venv
+.venv/
+
+# Python build artifacts
+*.egg-info/
+__pycache__/
+.pytest_cache/
+*.pyc
+
+# generated reports (optional: keep tracked if you want)
+# out/reports/attack_results.yaml
+# out/reports/audit_summary.md

@@ -1,126 +1,174 @@
 # MIT License © 2025 Motohiro Suzuki
 from __future__ import annotations
 
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List
-import json
-import subprocess
-import sys
-import time
 import yaml
 
-from tools.md_table import md_table
+PREFERRED_CLAIMS = ["claims.yaml", "claims/claims_table.yaml"]
+PREFERRED_ATTACKS = ["attack_catalog.yaml", "claims/attack_map.yaml"]
+
+RESULTS_FILE = "out/reports/attack_results.yaml"
+OUTPUT_FILE = "out/reports/audit_summary.md"
 
 
-ROOT = Path(__file__).resolve().parents[1]
-OUT = ROOT / "out" / "reports"
-OUT.mkdir(parents=True, exist_ok=True)
+def load_yaml_file(candidates: list[str]) -> tuple[str, dict]:
+    for path in candidates:
+        p = Path(path)
+        if p.exists():
+            return path, (yaml.safe_load(p.read_text(encoding="utf-8")) or {})
+    raise FileNotFoundError(f"Missing required YAML. Tried: {candidates}")
 
 
-@dataclass(frozen=True)
-class Claim:
-    id: str
-    title: str
-    description: str
+def normalize_claims(doc: dict) -> list[dict]:
+    claims = doc.get("claims")
+    if isinstance(claims, list) and claims:
+        for c in claims:
+            if "id" not in c:
+                raise ValueError("Each claim must have 'id'.")
+        return claims
+    raise ValueError("Claims YAML must contain non-empty 'claims:' list.")
 
 
-@dataclass(frozen=True)
-class Attack:
-    id: str
-    name: str
-    category: str
-    claim: str
-    test_file: str
+def normalize_attacks(doc: dict) -> list[dict]:
+    attacks = doc.get("attacks")
+    if not isinstance(attacks, list):
+        raise ValueError("Attack YAML must contain 'attacks:' list.")
 
+    norm: list[dict] = []
+    for a in attacks:
+        if not isinstance(a, dict):
+            continue
+        aid = a.get("id")
+        if not aid:
+            raise ValueError("Each attack must have 'id'.")
 
-def run(cmd: List[str]) -> tuple[int, str]:
-    p = subprocess.run(cmd, cwd=str(ROOT), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-    return p.returncode, p.stdout
+        validates = a.get("validates", None)
+        if validates is None:
+            single = a.get("claim", None)
+            if isinstance(single, str) and single.strip():
+                validates = [single.strip()]
+            else:
+                validates = []
+        else:
+            if isinstance(validates, str):
+                validates = [validates]
+            elif not isinstance(validates, list):
+                validates = []
 
-
-def load_claims() -> List[Claim]:
-    data = yaml.safe_load((ROOT / "claims.yaml").read_text(encoding="utf-8"))
-    out: List[Claim] = []
-    for c in data["claims"]:
-        out.append(Claim(id=str(c["id"]), title=str(c["title"]), description=str(c["description"])))
-    return out
-
-
-def load_attacks() -> List[Attack]:
-    data = yaml.safe_load((ROOT / "attack_catalog.yaml").read_text(encoding="utf-8"))
-    out: List[Attack] = []
-    for a in data["attacks"]:
-        out.append(
-            Attack(
-                id=str(a["id"]),
-                name=str(a["name"]),
-                category=str(a["category"]),
-                claim=str(a["claim"]),
-                test_file=str(a["test_file"]),
-            )
+        norm.append(
+            {
+                "id": str(aid),
+                "name": a.get("name", ""),
+                "validates": [str(x).strip() for x in validates if str(x).strip()],
+                "category": a.get("category", ""),
+                "test_file": a.get("test_file", ""),
+            }
         )
-    return out
+    return norm
 
 
-def main() -> None:
-    ts = int(time.time())
+def load_results() -> dict[str, str]:
+    """
+    Returns mapping: attack_id -> status (PASS/FAIL/UNKNOWN)
+    """
+    p = Path(RESULTS_FILE)
+    if not p.exists():
+        return {}
+    doc = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
+    items = doc.get("attacks", [])
+    m: dict[str, str] = {}
+    if isinstance(items, list):
+        for it in items:
+            if isinstance(it, dict) and "id" in it and "status" in it:
+                m[str(it["id"])] = str(it["status"])
+    return m
 
-    lint_rc, lint_out = run([sys.executable, "tools/lint_attack_driven_ci.py"])
-    test_rc, test_out = run([sys.executable, "-m", "pytest", "-q"])
 
-    claims = load_claims()
-    attacks = load_attacks()
+def claim_status_from_attacks(attack_ids: list[str], attack_status: dict[str, str]) -> str:
+    """
+    Claim status rules:
+      - if any mapped attack FAIL -> FAIL
+      - else if any mapped attack PASS -> PASS
+      - else if mapped but no results -> UNKNOWN
+      - else (no mapped attacks) -> UNCOVERED
+    """
+    if not attack_ids:
+        return "UNCOVERED"
+    statuses = [attack_status.get(aid, "UNKNOWN") for aid in attack_ids]
+    if any(s == "FAIL" for s in statuses):
+        return "FAIL"
+    if any(s == "PASS" for s in statuses):
+        return "PASS"
+    return "UNKNOWN"
 
-    # Coverage table: Claim -> Attacks
-    claim_to_attacks: Dict[str, List[str]] = {c.id: [] for c in claims}
-    for a in attacks:
-        claim_to_attacks[a.claim].append(a.id)
 
-    md_rows = []
-    for c in claims:
-        md_rows.append([c.id, c.title, ", ".join(sorted(claim_to_attacks[c.id]))])
+def main() -> int:
+    claims_path, claims_doc = load_yaml_file(PREFERRED_CLAIMS)
+    attacks_path, attacks_doc = load_yaml_file(PREFERRED_ATTACKS)
 
-    attacks_rows = []
-    for a in attacks:
-        attacks_rows.append([a.id, a.category, a.claim, a.name])
+    claims = normalize_claims(claims_doc)
+    attacks = normalize_attacks(attacks_doc)
+    attack_status = load_results()
 
-    overall_pass = (lint_rc == 0) and (test_rc == 0)
+    claim_ids = [c["id"] for c in claims]
+    coverage_map: dict[str, list[str]] = {cid: [] for cid in claim_ids}
 
-    md = []
-    md.append("# audit_summary (Stage187)\n")
-    md.append(f"- timestamp: {ts}\n")
-    md.append(f"- lint: {'PASS' if lint_rc == 0 else 'FAIL'}\n")
-    md.append(f"- tests: {'PASS' if test_rc == 0 else 'FAIL'}\n")
-    md.append(f"- overall: {'PASS' if overall_pass else 'FAIL'}\n\n")
+    for atk in attacks:
+        aid = atk["id"]
+        for cid in atk.get("validates", []) or []:
+            if cid in coverage_map:
+                coverage_map[cid].append(aid)
 
-    md.append("## Claim → Attack coverage\n")
-    md.append(md_table(["Claim", "Title", "Covered by attacks"], md_rows))
-    md.append("\n## Attack catalog (Category → Claim)\n")
-    md.append(md_table(["Attack", "Category", "Claim", "Name"], attacks_rows))
+    covered = sum(1 for cid in coverage_map if coverage_map[cid])
+    total = len(coverage_map)
+    coverage_percent = round((covered / total) * 100, 1) if total else 0.0
 
-    md.append("\n## Lint output\n")
-    md.append("```text\n" + lint_out.strip() + "\n```\n")
+    lines: list[str] = []
+    lines.append("# Audit Coverage Summary\n")
+    lines.append("## Inputs\n")
+    lines.append(f"- Claims: `{claims_path}`")
+    lines.append(f"- Attacks: `{attacks_path}`")
+    lines.append(f"- Results: `{RESULTS_FILE}` (if present)\n")
+    lines.append("| Claim | Covered By Attacks | Status |")
+    lines.append("|-------|--------------------|--------|")
 
-    md.append("\n## Pytest output\n")
-    md.append("```text\n" + test_out.strip() + "\n```\n")
+    any_fail = False
+    any_uncovered = False
 
-    (OUT / "audit_summary.md").write_text("".join(md), encoding="utf-8")
+    for cid in claim_ids:
+        aids = coverage_map[cid]
+        attacks_list = ", ".join(aids) if aids else "-"
+        status = claim_status_from_attacks(aids, attack_status)
 
-    js = {
-        "timestamp": ts,
-        "lint": {"rc": lint_rc, "pass": lint_rc == 0},
-        "tests": {"rc": test_rc, "pass": test_rc == 0},
-        "overall_pass": overall_pass,
-        "claims": [{"id": c.id, "title": c.title} for c in claims],
-        "attacks": [{"id": a.id, "category": a.category, "claim": a.claim, "name": a.name} for a in attacks],
-        "coverage": {cid: sorted(aids) for cid, aids in claim_to_attacks.items()},
-    }
-    (OUT / "audit_summary.json").write_text(json.dumps(js, indent=2, ensure_ascii=False), encoding="utf-8")
+        if status == "FAIL":
+            any_fail = True
+        if status == "UNCOVERED":
+            any_uncovered = True
 
-    print("[OK] wrote out/reports/audit_summary.md and audit_summary.json")
-    sys.exit(0 if overall_pass else 1)
+        lines.append(f"| {cid} | {attacks_list} | {status} |")
+
+    lines.append("")
+    lines.append(f"**Coverage: {covered}/{total} ({coverage_percent}%)**")
+    lines.append("")
+
+    Path("out/reports").mkdir(parents=True, exist_ok=True)
+    Path(OUTPUT_FILE).write_text("\n".join(lines), encoding="utf-8")
+    print(f"[OK] wrote {OUTPUT_FILE} (coverage {covered}/{total} = {coverage_percent}%)")
+
+    # Gate: fail CI on uncovered OR failing attacks
+    if any_uncovered:
+        print("[FAIL] uncovered claims exist.")
+        return 1
+    if any_fail:
+        print("[FAIL] at least one attack test failed.")
+        return 1
+
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        raise SystemExit(main())
+    except Exception as e:
+        print(f"[ERR] {e}")
+        raise SystemExit(2)

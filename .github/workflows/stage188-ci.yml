@@ -1,0 +1,38 @@
+name: stage188-ci
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  attack-driven-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pyyaml
+
+      - name: Run attack tests (collect PASS/FAIL)
+        run: |
+          python tools/run_attack_tests.py
+
+      - name: Generate audit summary (gate uncovered/fail)
+        run: |
+          python tools/generate_audit_summary.py
+
+      - name: Upload audit artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage188-audit
+          path: |
+            out/reports/attack_results.yaml
+            out/reports/audit_summary.md
