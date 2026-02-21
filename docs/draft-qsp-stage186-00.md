@@ -71,6 +71,20 @@ CI MUST fail if any mapping becomes invalid.
 This prevents specification drift across:
 Implementation ↔ Formal model ↔ Internet-Draft text.
 
+# 3. Formal-Claim Alignment Model (FCAM)
+
+This document enforces a machine-checkable alignment between:
+
+- Security Claims (claims/formal_claims.yaml)
+- Formal lemmas (Tamarin model)
+- CI enforcement
+
+Each Claim ID MUST map to exactly one lemma_id.
+CI MUST fail if any mapping becomes invalid.
+
+This prevents specification drift across:
+Implementation ↔ Formal model ↔ Internet-Draft text.
+
 # 4. Security Considerations (Attack Model Classification)
 
 This section explicitly defines attack categories and Stage186 behavior.
