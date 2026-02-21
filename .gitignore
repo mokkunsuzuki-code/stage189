@@ -20,3 +20,8 @@ __pycache__/
 # generated reports (optional: keep tracked if you want)
 # out/reports/attack_results.yaml
 # out/reports/audit_summary.md
+
+# Python venv
+.venv/
+__pycache__/
+*.pyc
