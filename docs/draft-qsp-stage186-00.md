@@ -199,3 +199,30 @@ attack-aware structured specification with evidence-preserving CI.
 
 The stage prioritizes reviewer transparency over cryptographic novelty.
 
+
+## Attack-Driven CI Verification
+
+QSP includes an automated Attack-Driven CI pipeline that continuously verifies
+security claims against concrete, reproducible attack scenarios.
+
+### Inputs
+
+- `claims.yaml`: normative list of security claims (A1–A6)
+- `attack_catalog.yaml`: mapping of each attack scenario to the claim it validates,
+  including the executable test file
+
+### Outputs
+
+- `out/reports/attack_results.yaml`: per-attack PASS/FAIL results from CI execution
+- `out/reports/audit_summary.md`: claim-level coverage matrix and status
+
+### CI Gate Policy
+
+The CI pipeline MUST fail if either condition holds:
+
+1. Any claim is UNCOVERED (no mapped attack scenario).
+2. Any mapped attack scenario fails (FAIL).
+
+This provides a continuously verifiable binding from security claims to executable
+adversarial tests, producing auditable evidence on every commit.
+
