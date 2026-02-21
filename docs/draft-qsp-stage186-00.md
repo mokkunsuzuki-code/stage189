@@ -72,6 +72,8 @@ This prevents specification drift across:
 Implementation ↔ Formal model ↔ Internet-Draft text.
 
 
+# 4. Security Considerations (Attack Model Classification)
+
 This section explicitly defines attack categories and Stage186 behavior.
 
 ---
